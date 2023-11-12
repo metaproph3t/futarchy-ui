@@ -24,7 +24,7 @@ import {
 } from '@mui/material';
 import type { NextPage } from 'next';
 import dynamic from 'next/dynamic';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import pkg from '../../package.json';
 import { useAutoConnect } from '../components/AutoConnectProvider';
 import AccordionSummary from '@mui/material/AccordionSummary';
@@ -188,27 +188,44 @@ const Index: NextPage = () => {
 
     console.log(wallet?.publicKey.toBase58())
 
-    // console.log(publicKey?.toBase58())
-    const provider = new anchor.AnchorProvider(connection, wallet as anchor.Wallet, {});
-    const autocrat = new anchor.Program(AutocratIDL, AUTOCRAT_PROGRAM_ID, provider);
+    const [proposals, setProposals] = useState([]);
 
-    autocrat.account.proposal.all().then((proposals) => {
-        console.log(proposals[0].account);
-    });
+    useEffect(() => {
+        if (wallet && connection) {
+            const provider = new anchor.AnchorProvider(connection, wallet as anchor.Wallet, {});
+            const autocrat = new anchor.Program(AutocratIDL, AUTOCRAT_PROGRAM_ID, provider);
+
+            // Fetch and set proposals
+            autocrat.account.proposal.all().then(fetchedProposals => {
+                console.log(fetchedProposals.map(p => p.account));
+                setProposals(fetchedProposals.map(p => p.account));
+            }).catch(err => {
+                console.error("Failed to fetch proposals:", err);
+            });
+        }
+    }, [wallet, connection]); // Dependencies array
+
+    // console.log(publicKey?.toBase58())
+    // const provider = new anchor.AnchorProvider(connection, wallet as anchor.Wallet, {});
+    // const autocrat = new anchor.Program(AutocratIDL, AUTOCRAT_PROGRAM_ID, provider);
+
+    // autocrat.account.proposal.all().then((proposals) => {
+    //     console.log(proposals[0].account);
+    // });
 
     // new anchor.Program()
 
-    const proposals = [
-        {
-            number: 0,
-            descriptionUrl: 'https://www.eff.org/cyberspace-independence',
-            slotEnqueued: 1039209302,
-            state: 'pending',
-            conditionalBalances: { passMETA: 100, failMETA: 50, passUSDC: 200, failUSDC: 100 },
-            marketPrices: { passMETA: 1.2, failMETA: 0.8 },
-            // Add other necessary fields
-        },
-    ];
+    // const proposals = [
+    //     {
+    //         number: 0,
+    //         descriptionUrl: 'https://www.eff.org/cyberspace-independence',
+    //         slotEnqueued: 1039209302,
+    //         state: 'pending',
+    //         conditionalBalances: { passMETA: 100, failMETA: 50, passUSDC: 200, failUSDC: 100 },
+    //         marketPrices: { passMETA: 1.2, failMETA: 0.8 },
+    //         // Add other necessary fields
+    //     },
+    // ];
 
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -272,11 +289,11 @@ const Index: NextPage = () => {
                                 variant="body1"
                                 style={{
                                     marginLeft: 'auto',
-                                    color: getStatusColor(proposal.state),
+                                    color: getStatusColor(Object.keys(proposal.state)[0]),
                                     fontWeight: 'bold',
                                 }}
                             >
-                                {proposal.state.toUpperCase()}
+                                {Object.keys(proposal.state)[0].toUpperCase()}
                             </Typography>
                         </AccordionSummary>
                         <AccordionDetails>
@@ -316,7 +333,7 @@ const Index: NextPage = () => {
                                         Slot Enqueued
                                     </Typography>
                                     <Typography variant="body1" style={{ marginTop: 4 }}>
-                                        {proposal.slotEnqueued}
+                                        {proposal.slotEnqueued.toString()}
                                     </Typography>
                                 </CustomCard>
 
@@ -328,10 +345,10 @@ const Index: NextPage = () => {
                                                 Conditional META Balances
                                             </Typography>
                                             <Typography>
-                                                Conditional-on-Pass: {proposal.conditionalBalances.passMETA} META
+                                                Conditional-on-Pass: 100 META
                                             </Typography>
                                             <Typography>
-                                                Conditional-on-Fail: {proposal.conditionalBalances.failMETA} META
+                                                Conditional-on-Fail: 329 META
                                             </Typography>
                                             <Grid container spacing={1} alignItems="center" style={{ marginTop: 16 }}>
                                                 <Grid item xs>
@@ -363,10 +380,10 @@ const Index: NextPage = () => {
                                                 Conditional USDC Balances
                                             </Typography>
                                             <Typography>
-                                                Conditional-on-Pass: {proposal.conditionalBalances.passUSDC} USDC
+                                                Conditional-on-Pass: 100 USDC
                                             </Typography>
                                             <Typography>
-                                                Conditional-on-Fail: {proposal.conditionalBalances.failUSDC} USDC
+                                                Conditional-on-Fail: 203 USDC
                                             </Typography>
                                             <Grid container spacing={1} alignItems="center" style={{ marginTop: 16 }}>
                                                 <Grid item xs>
