@@ -8,6 +8,7 @@ import {
     MenuItem,
     FormControlLabel,
     Switch,
+    Link,
     Table,
     TextField,
     TableBody,
@@ -68,7 +69,12 @@ const SignTransactionDynamic = dynamic(async () => (await import('../components/
     ssr: false,
 });
 
-const SwapComponent = ({ onSwap, exchangeRate }) => {
+interface SwapComponentProps {
+    onSwap: (amountIn: string, tokenIn: string, tokenOut: string, marketType: string) => void;
+    exchangeRate: number;
+}
+
+const SwapComponent: React.FC<SwapComponentProps> = ({ onSwap, exchangeRate }) => {
     const [amountIn, setAmountIn] = useState('');
     const [tokenIn, setTokenIn] = useState('META');
     const [tokenOut, setTokenOut] = useState('USDC');
@@ -151,15 +157,28 @@ const Index: NextPage = () => {
 
     const proposals = [
         {
-            id: 1,
-            title: 'Proposal One',
-            description: 'Description for Proposal One',
-            url: '#',
+            number: 0,
+            descriptionUrl: 'https://www.eff.org/cyberspace-independence',
+            slotEnqueued: 1039209302,
+            state: 'pending',
             conditionalBalances: { passMETA: 100, failMETA: 50, passUSDC: 200, failUSDC: 100 },
             marketPrices: { passMETA: 1.2, failMETA: 0.8 },
             // Add other necessary fields
         },
     ];
+
+    const getStatusColor = (status) => {
+        switch (status) {
+            case 'pending':
+                return 'yellow';
+            case 'passed':
+                return 'green';
+            case 'failed':
+                return 'red';
+            default:
+                return 'grey'; // Default color if status is unknown
+        }
+    };
 
     const userBalances = {
         USDC: 1000, // Replace with real data
@@ -198,22 +217,49 @@ const Index: NextPage = () => {
                     </Grid>
                 </Grid>
                 {proposals.map((proposal) => (
-                    <Accordion key={proposal.id}>
+                    <Accordion key={proposal.number}>
                         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                            <Typography variant="h6">{proposal.title}</Typography>
+                            <Typography variant="h6">{'Proposal ' + proposal.number}</Typography>
+
+                            {/* Status label */}
+                            <Typography
+                                variant="body1"
+                                style={{
+                                    marginLeft: 'auto',
+                                    color: getStatusColor(proposal.state),
+                                    fontWeight: 'bold',
+                                }}
+                            >
+                                {proposal.state.toUpperCase()}
+                            </Typography>
                         </AccordionSummary>
                         <AccordionDetails>
                             <CardContent>
-                                <Typography gutterBottom variant="body1">
-                                    {proposal.description}
-                                </Typography>
+                                <Card variant="outlined" style={{ marginBottom: 16 }}>
+                                    <CardContent>
+                                        <Typography variant="h6">Proposal Details</Typography>
+                                        <Typography variant="subtitle1" color="textSecondary">
+                                            Description:
+                                        </Typography>
+                                        <Typography variant="body1" style={{ marginTop: 4 }}>
+                                            <Link
+                                                href={proposal.descriptionUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                style={{ textDecoration: 'none', color: '#1976d2' }}
+                                            >
+                                                {proposal.descriptionUrl}
+                                            </Link>
+                                        </Typography>
+                                    </CardContent>
+                                </Card>
 
                                 <Grid container spacing={2}>
                                     {/* META Balance Card */}
                                     <Grid item xs={6}>
                                         <Card variant="outlined">
                                             <CardContent>
-                                                <Typography variant="h6">META Balances</Typography>
+                                                <Typography variant="h6">Conditional META Balances</Typography>
                                                 <Typography>
                                                     Conditional-on-Pass: {proposal.conditionalBalances.passMETA} META
                                                 </Typography>
@@ -253,7 +299,7 @@ const Index: NextPage = () => {
                                     <Grid item xs={6}>
                                         <Card variant="outlined">
                                             <CardContent>
-                                                <Typography variant="h6">USDC Balances</Typography>
+                                                <Typography variant="h6">Conditional USDC Balances</Typography>
                                                 <Typography>
                                                     Conditional-on-Pass: {proposal.conditionalBalances.passUSDC} USDC
                                                 </Typography>
