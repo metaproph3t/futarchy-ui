@@ -31,6 +31,7 @@
         "dev": "NODE_OPTIONS='--inspect' next dev",
         "start": "next start",
         "lint": "prettier --check 'src/{*,**/*}.{ts,tsx,js,jsx,json}' && eslint && next lint",
+        "lint:fix": "prettier --write 'src/{*,**/*}.{ts,tsx,js,jsx,json}'",
         "export": "next export"
     },
     "dependencies": {
