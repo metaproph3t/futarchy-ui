@@ -32,7 +32,17 @@ import AccordionDetails from '@mui/material/AccordionDetails';
 import Typography from '@mui/material/Typography';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SwapVertIcon from '@mui/icons-material/SwapVert';
-import { useConnection, useWallet } from '@solana/wallet-adapter-react';
+import { useConnection, useAnchorWallet } from '@solana/wallet-adapter-react';
+import * as anchor from "@coral-xyz/anchor";
+
+import { AutocratV0 } from "../idl/autocrat_v0";
+
+const AutocratIDL: AutocratV0 = require("../idl/autocrat_v0.json");
+// const OpenbookTwapIDL: OpenbookTwap = require("../tests/fixtures/openbook_twap.json");
+
+const AUTOCRAT_PROGRAM_ID = new anchor.web3.PublicKey(
+  "meta3cxKzFBmWYgCVozmvCQAS3y9b3fGxrG9HkHL7Wi"
+);
 
 const MaterialUIWalletConnectButtonDynamic = dynamic(
     async () => (await import('@solana/wallet-adapter-material-ui')).WalletConnectButton,
@@ -75,7 +85,11 @@ interface SwapComponentProps {
     exchangeRate: number;
 }
 
-const CustomCard = ({ children }) => {
+interface CustomCardProps {
+    children: React.ReactNode;
+}
+
+const CustomCard: React.FC<CustomCardProps> = ({ children }) => {
     return (
         <Card
             variant="outlined"
@@ -95,7 +109,7 @@ const SwapComponent: React.FC<SwapComponentProps> = ({ onSwap, exchangeRate }) =
     const [tokenOut, setTokenOut] = useState('USDC');
     const [marketType, setMarketType] = useState('pass'); // 'pass' or 'fail'
 
-    const handleAmountInChange = (event) => {
+    const handleAmountInChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setAmountIn(event.target.value);
         // Add the logic to calculate the estimated amount out based on the current market rate
     };
@@ -149,7 +163,7 @@ const SwapComponent: React.FC<SwapComponentProps> = ({ onSwap, exchangeRate }) =
                 <Grid item xs={12}>
                     <TextField
                         label="To (estimated)"
-                        value={amountIn && (amountIn * exchangeRate).toFixed(2)} // Replace with real conversion logic
+                        value={amountIn && (parseFloat(amountIn) * exchangeRate).toFixed(2)} // Replace with real conversion logic
                         InputProps={{
                             readOnly: true,
                             endAdornment: <InputAdornment position="end">{tokenOut}</InputAdornment>,
@@ -170,9 +184,19 @@ const SwapComponent: React.FC<SwapComponentProps> = ({ onSwap, exchangeRate }) =
 const Index: NextPage = () => {
     const { autoConnect, setAutoConnect } = useAutoConnect();
     const { connection } = useConnection();
-    const { publicKey, sendTransaction, wallet } = useWallet();
+    const wallet = useAnchorWallet();
 
-    console.log(publicKey?.toBase58())
+    console.log(wallet?.publicKey.toBase58())
+
+    // console.log(publicKey?.toBase58())
+    const provider = new anchor.AnchorProvider(connection, wallet as anchor.Wallet, {});
+    const autocrat = new anchor.Program(AutocratIDL, AUTOCRAT_PROGRAM_ID, provider);
+
+    autocrat.account.proposal.all().then((proposals) => {
+        console.log(proposals[0].account);
+    });
+
+    // new anchor.Program()
 
     const proposals = [
         {
@@ -186,7 +210,7 @@ const Index: NextPage = () => {
         },
     ];
 
-    const getStatusColor = (status) => {
+    const getStatusColor = (status: string) => {
         switch (status) {
             case 'pending':
                 return 'yellow';
@@ -368,7 +392,7 @@ const Index: NextPage = () => {
                                     </Grid>
                                 </Grid>
 
-                                <SwapComponent onSwap={null} exchangeRate={1} />
+                                <SwapComponent onSwap={() => {}} exchangeRate={1} />
 
                                 {/* Additional buttons and functionality */}
                                 <Button variant="contained" color="primary" style={{ marginTop: 16 }}>
