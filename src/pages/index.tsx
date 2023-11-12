@@ -34,6 +34,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SwapVertIcon from '@mui/icons-material/SwapVert';
 import { useConnection, useAnchorWallet } from '@solana/wallet-adapter-react';
 import * as anchor from "@coral-xyz/anchor";
+import * as token from "@solana/spl-token";
 
 import { AutocratV0 } from "../idl/autocrat_v0";
 
@@ -42,6 +43,11 @@ const AutocratIDL: AutocratV0 = require("../idl/autocrat_v0.json");
 
 const AUTOCRAT_PROGRAM_ID = new anchor.web3.PublicKey(
   "meta3cxKzFBmWYgCVozmvCQAS3y9b3fGxrG9HkHL7Wi"
+);
+
+const [daoAddress] = anchor.web3.PublicKey.findProgramAddressSync(
+    [anchor.utils.bytes.utf8.encode("WWCACOTMICMIBMHAFTTWYGHMB")],
+    AUTOCRAT_PROGRAM_ID
 );
 
 const MaterialUIWalletConnectButtonDynamic = dynamic(
@@ -188,7 +194,10 @@ const Index: NextPage = () => {
 
     console.log(wallet?.publicKey.toBase58())
 
+    const [dao, setDAO] = useState(null);
     const [proposals, setProposals] = useState([]);
+    const [userMetaBalance, setUserMetaBalance] = useState(0);
+    const [userUsdcBalance, setUserUsdcBalance] = useState(0);
 
     useEffect(() => {
         if (wallet && connection) {
@@ -204,6 +213,51 @@ const Index: NextPage = () => {
             });
         }
     }, [wallet, connection]); // Dependencies array
+
+    useEffect(() => {
+        if (wallet && connection) {
+            const provider = new anchor.AnchorProvider(connection, wallet as anchor.Wallet, {});
+            const autocrat = new anchor.Program(AutocratIDL, AUTOCRAT_PROGRAM_ID, provider);
+
+            autocrat.account.dao.fetch(daoAddress).then(dao => {
+                console.log(dao);
+                setDAO(dao);
+            }).catch(err => {
+                console.error("Failed to fetch dao:", err);
+            });
+        }
+    }, [wallet, connection]); // Dependencies array
+
+    useEffect(() => {
+        if (wallet && connection && dao) {
+            const associatedMetaAcc = token.getAssociatedTokenAddressSync(dao.metaMint, wallet.publicKey);
+            const associatedUsdcAcc = token.getAssociatedTokenAddressSync(dao.usdcMint, wallet.publicKey);
+
+            token.getAccount(connection, associatedMetaAcc).then((metaAcc) => {
+                setUserMetaBalance(Number(metaAcc.amount));
+            }).catch(err => {
+                console.error("User doesn't have a META account");
+            });
+
+            token.getAccount(connection, associatedUsdcAcc).then((usdcAcc) => {
+                setUserUsdcBalance(Number(usdcAcc.amount));
+            }).catch(err => {
+                console.error("User doesn't have a USDC account");
+            });
+
+            // const provider = new anchor.AnchorProvider(connection, wallet as anchor.Wallet, {});
+            // const autocrat = new anchor.Program(AutocratIDL, AUTOCRAT_PROGRAM_ID, provider);
+
+            // // Fetch and set proposals
+            // autocrat.account.proposal.all().then(fetchedProposals => {
+            //     console.log(fetchedProposals.map(p => p.account));
+            //     setProposals(fetchedProposals.map(p => p.account));
+            // }).catch(err => {
+            //     console.error("Failed to fetch proposals:", err);
+            // });
+        }
+    }, [wallet, connection, dao]);
+
 
     // console.log(publicKey?.toBase58())
     // const provider = new anchor.AnchorProvider(connection, wallet as anchor.Wallet, {});
@@ -266,7 +320,7 @@ const Index: NextPage = () => {
                         <Card>
                             <CardContent>
                                 <Typography variant="h5">USDC Balance</Typography>
-                                <Typography variant="body1">{userBalances.USDC} USDC</Typography>
+                                <Typography variant="body1">{userUsdcBalance / 1_000_000} USDC</Typography>
                             </CardContent>
                         </Card>
                     </Grid>
@@ -274,7 +328,7 @@ const Index: NextPage = () => {
                         <Card>
                             <CardContent>
                                 <Typography variant="h5">META Balance</Typography>
-                                <Typography variant="body1">{userBalances.META} META</Typography>
+                                <Typography variant="body1">{userMetaBalance / 1_000_000_000} META</Typography>
                             </CardContent>
                         </Card>
                     </Grid>
