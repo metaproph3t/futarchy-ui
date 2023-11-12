@@ -1,26 +1,13 @@
-import { FormControlLabel, Switch, Table, TableBody, TableCell, TableHead, TableRow, Tooltip } from '@mui/material';
+import { Accordion, FormControlLabel, Switch, Table, TableBody, TableCell, TableHead, TableRow, Tooltip, Container, CardContent, Button, Grid, Card } from '@mui/material';
 import type { NextPage } from 'next';
 import dynamic from 'next/dynamic';
 import React from 'react';
 import pkg from '../../package.json';
 import { useAutoConnect } from '../components/AutoConnectProvider';
-
-const AntDesignWalletConnectButtonDynamic = dynamic(
-    async () => (await import('@solana/wallet-adapter-ant-design')).WalletConnectButton,
-    { ssr: false }
-);
-const AntDesignWalletDisconnectButtonDynamic = dynamic(
-    async () => (await import('@solana/wallet-adapter-ant-design')).WalletDisconnectButton,
-    { ssr: false }
-);
-const AntDesignWalletMultiButtonDynamic = dynamic(
-    async () => (await import('@solana/wallet-adapter-ant-design')).WalletMultiButton,
-    { ssr: false }
-);
-const AntDesignWalletModalButtonDynamic = dynamic(
-    async () => (await import('@solana/wallet-adapter-ant-design')).WalletModalButton,
-    { ssr: false }
-);
+import AccordionSummary from '@mui/material/AccordionSummary';
+import AccordionDetails from '@mui/material/AccordionDetails';
+import Typography from '@mui/material/Typography';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 const MaterialUIWalletConnectButtonDynamic = dynamic(
     async () => (await import('@solana/wallet-adapter-material-ui')).WalletConnectButton,
@@ -38,24 +25,6 @@ const MaterialUIWalletMultiButtonDynamic = dynamic(
     async () => (await import('@solana/wallet-adapter-material-ui')).WalletMultiButton,
     { ssr: false }
 );
-
-const ReactUIWalletConnectButtonDynamic = dynamic(
-    async () => (await import('@solana/wallet-adapter-react-ui')).WalletConnectButton,
-    { ssr: false }
-);
-const ReactUIWalletDisconnectButtonDynamic = dynamic(
-    async () => (await import('@solana/wallet-adapter-react-ui')).WalletDisconnectButton,
-    { ssr: false }
-);
-const ReactUIWalletMultiButtonDynamic = dynamic(
-    async () => (await import('@solana/wallet-adapter-react-ui')).WalletMultiButton,
-    { ssr: false }
-);
-const ReactUIWalletModalButtonDynamic = dynamic(
-    async () => (await import('@solana/wallet-adapter-react-ui')).WalletModalButton,
-    { ssr: false }
-);
-
 const RequestAirdropDynamic = dynamic(async () => (await import('../components/RequestAirdrop')).RequestAirdrop, {
     ssr: false,
 });
@@ -79,130 +48,68 @@ const SignTransactionDynamic = dynamic(async () => (await import('../components/
 const Index: NextPage = () => {
     const { autoConnect, setAutoConnect } = useAutoConnect();
 
+    const proposals = [
+        { id: 1, title: "Proposal One", description: "Description for Proposal One", url: "#" },
+        { id: 2, title: "Proposal Two", description: "Description for Proposal Two", url: "#" },
+        // Add more proposals as needed
+    ];
+
+    const userBalances = {
+        USDC: 1000, // Replace with real data
+        META: 500  // Replace with real data
+    };
+
     return (
         <>
-            <Table>
-                <TableHead>
-                    <TableRow>
-                        <TableCell width={240}>Component</TableCell>
-                        <TableCell width={240}>Material UI</TableCell>
-                        <TableCell width={240}>Ant Design</TableCell>
-                        <TableCell width={240}>React UI</TableCell>
-                        <TableCell></TableCell>
-                    </TableRow>
-                </TableHead>
-                <TableBody>
-                    <TableRow>
-                        <TableCell>Connect Button</TableCell>
-                        <TableCell>
-                            <MaterialUIWalletConnectButtonDynamic />
-                        </TableCell>
-                        <TableCell>
-                            <AntDesignWalletConnectButtonDynamic />
-                        </TableCell>
-                        <TableCell>
-                            <ReactUIWalletConnectButtonDynamic />
-                        </TableCell>
-                        <TableCell></TableCell>
-                    </TableRow>
-                    <TableRow>
-                        <TableCell>Disconnect Button</TableCell>
-                        <TableCell>
-                            <MaterialUIWalletDisconnectButtonDynamic />
-                        </TableCell>
-                        <TableCell>
-                            <AntDesignWalletDisconnectButtonDynamic />
-                        </TableCell>
-                        <TableCell>
-                            <ReactUIWalletDisconnectButtonDynamic />
-                        </TableCell>
-                        <TableCell></TableCell>
-                    </TableRow>
-                    <TableRow>
-                        <TableCell>Dialog/Modal Button</TableCell>
-                        <TableCell>
-                            <MaterialUIWalletDialogButtonDynamic />
-                        </TableCell>
-                        <TableCell>
-                            <AntDesignWalletModalButtonDynamic />
-                        </TableCell>
-                        <TableCell>
-                            <ReactUIWalletModalButtonDynamic />
-                        </TableCell>
-                        <TableCell></TableCell>
-                    </TableRow>
-                    <TableRow>
-                        <TableCell>Multi Button</TableCell>
-                        <TableCell>
-                            <MaterialUIWalletMultiButtonDynamic />
-                        </TableCell>
-                        <TableCell>
-                            <AntDesignWalletMultiButtonDynamic />
-                        </TableCell>
-                        <TableCell>
-                            <ReactUIWalletMultiButtonDynamic />
-                        </TableCell>
-                        <TableCell></TableCell>
-                    </TableRow>
-                </TableBody>
-            </Table>
-            <br />
-            <br />
-            <Table>
-                <TableHead>
-                    <TableRow>
-                        <TableCell width={240}>Example v{pkg.version}</TableCell>
-                        <TableCell width={240}></TableCell>
-                        <TableCell width={240}></TableCell>
-                        <TableCell width={240}></TableCell>
-                        <TableCell></TableCell>
-                    </TableRow>
-                </TableHead>
-                <TableBody>
-                    <TableRow>
-                        <TableCell>
-                            <Tooltip title="Only runs if the wallet is ready to connect" placement="left">
-                                <FormControlLabel
-                                    control={
-                                        <Switch
-                                            name="autoConnect"
-                                            color="secondary"
-                                            checked={autoConnect}
-                                            onChange={(event, checked) => setAutoConnect(checked)}
-                                        />
-                                    }
-                                    label="AutoConnect"
-                                />
-                            </Tooltip>
-                        </TableCell>
-                        <TableCell>
-                            <RequestAirdropDynamic />
-                        </TableCell>
-                        <TableCell>
-                            <SignTransactionDynamic />
-                        </TableCell>
-                        <TableCell>
-                            <SignMessageDynamic />
-                        </TableCell>
-                        <TableCell>
-                            <SignInDynamic />
-                        </TableCell>
-                    </TableRow>
-                    <TableRow>
-                        <TableCell></TableCell>
-                        <TableCell>
-                            <SendTransactionDynamic />
-                        </TableCell>
-                        <TableCell>
-                            <SendLegacyTransactionDynamic />
-                        </TableCell>
-                        <TableCell>
-                            <SendV0TransactionDynamic />
-                        </TableCell>
-                        <TableCell></TableCell>
-                    </TableRow>
-                </TableBody>
-            </Table>
+        <Container maxWidth="md">
+            <Grid container justifyContent="space-between" alignItems="center">
+                <Grid item>
+                <Typography variant="h2">Proposals</Typography>
+                </Grid>
+                <Grid item>
+                <MaterialUIWalletMultiButtonDynamic />
+                </Grid>
+            </Grid>
+            {/* <Typography variant="h2" gutterBottom>
+                Proposals
+            </Typography> */}
+            <Grid container spacing={2} style={{ marginBottom: '20px' }}>
+                <Grid item xs={6}>
+                <Card>
+                    <CardContent>
+                    <Typography variant="h5">USDC Balance</Typography>
+                    <Typography variant="body1">{userBalances.USDC} USDC</Typography>
+                    </CardContent>
+                </Card>
+                </Grid>
+                <Grid item xs={6}>
+                <Card>
+                    <CardContent>
+                    <Typography variant="h5">META Balance</Typography>
+                    <Typography variant="body1">{userBalances.META} META</Typography>
+                    </CardContent>
+                </Card>
+                </Grid>
+            </Grid>
+            {proposals.map(proposal => (
+                <Accordion key={proposal.id}>
+                <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Typography variant="h6">{proposal.title}</Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                    <CardContent>
+                    <Typography gutterBottom variant="body1">
+                        {proposal.description}
+                    </Typography>
+                    <Button variant="contained" color="primary">
+                        Deposit META/USDC
+                    </Button>
+                    {/* Additional buttons and functionality can be added here */}
+                    </CardContent>
+                </AccordionDetails>
+                </Accordion>
+            ))}
+          </Container>
         </>
     );
 };

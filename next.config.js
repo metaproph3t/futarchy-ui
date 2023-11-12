@@ -13,11 +13,11 @@ module.exports = function (phase, { defaultConfig }) {
         // Note this produces an unnecessary warning:
         // 'The root value has an unexpected property, modifyVars'
         // See https://github.com/SolidZORO/next-plugin-antd-less/issues/105
-        modifyVars: {
-            '@background': COLORS.GREY,
-            '@primary-color': COLORS.PURPLE,
-        },
-        basePath: phase === PHASE_PRODUCTION_BUILD ? '/wallet-adapter/example' : '',
+        // modifyVars: {
+        //     '@background': COLORS.GREY,
+        //     '@primary-color': COLORS.PURPLE,
+        // },
+        basePath: phase === PHASE_PRODUCTION_BUILD ? '' : '',
     });
 
     return config;
