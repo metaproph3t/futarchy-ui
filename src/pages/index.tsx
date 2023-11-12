@@ -74,6 +74,20 @@ interface SwapComponentProps {
     exchangeRate: number;
 }
 
+const CustomCard = ({ children }) => {
+    return (
+        <Card
+            variant="outlined"
+            style={{
+                marginBottom: 20,
+                borderColor: '#1976d2',
+            }}
+        >
+            <CardContent style={{ padding: '16px' }}>{children}</CardContent>
+        </Card>
+    );
+};
+
 const SwapComponent: React.FC<SwapComponentProps> = ({ onSwap, exchangeRate }) => {
     const [amountIn, setAmountIn] = useState('');
     const [tokenIn, setTokenIn] = useState('META');
@@ -99,56 +113,56 @@ const SwapComponent: React.FC<SwapComponentProps> = ({ onSwap, exchangeRate }) =
     };
 
     return (
-        <Card variant="outlined" style={{ marginTop: 16 }}>
-            <CardContent>
-                <Typography variant="h6">Swap Tokens</Typography>
-                <FormControl fullWidth style={{ marginTop: 16 }}>
-                    <InputLabel>Market Type</InputLabel>
-                    <Select value={marketType} onChange={(e) => setMarketType(e.target.value)}>
-                        <MenuItem value="pass">Conditional-on-Pass</MenuItem>
-                        <MenuItem value="fail">Conditional-on-Fail</MenuItem>
-                    </Select>
-                </FormControl>
+        <CustomCard>
+            <Typography variant="h6" style={{ fontWeight: 'bold' }}>
+                Swap Tokens
+            </Typography>
+            <FormControl fullWidth style={{ marginTop: 16 }}>
+                <InputLabel>Market Type</InputLabel>
+                <Select value={marketType} onChange={(e) => setMarketType(e.target.value)}>
+                    <MenuItem value="pass">Conditional-on-Pass</MenuItem>
+                    <MenuItem value="fail">Conditional-on-Fail</MenuItem>
+                </Select>
+            </FormControl>
 
-                <Grid container spacing={2} alignItems="center">
-                    <Grid item xs={12}>
-                        <TextField
-                            label="From (amount)"
-                            value={amountIn}
-                            onChange={handleAmountInChange}
-                            type="number"
-                            fullWidth
-                            InputProps={{
-                                endAdornment: <InputAdornment position="end">{tokenIn}</InputAdornment>,
-                            }}
-                            // Reduced margin top for the 'From' box
-                            sx={{ mt: 1 }}
-                        />
-                    </Grid>
-                    <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center', my: -2 }}>
-                        <IconButton onClick={handleTokenSwap} color="primary">
-                            <SwapVertIcon />
-                        </IconButton>
-                    </Grid>
-                    <Grid item xs={12}>
-                        <TextField
-                            label="To (estimated)"
-                            value={amountIn && (amountIn * exchangeRate).toFixed(2)} // Replace with real conversion logic
-                            InputProps={{
-                                readOnly: true,
-                                endAdornment: <InputAdornment position="end">{tokenOut}</InputAdornment>,
-                            }}
-                            fullWidth
-                            // Reduced margin top for the 'To' box
-                            sx={{ mt: 1 }}
-                        />
-                    </Grid>
+            <Grid container spacing={2} alignItems="center">
+                <Grid item xs={12}>
+                    <TextField
+                        label="From (amount)"
+                        value={amountIn}
+                        onChange={handleAmountInChange}
+                        type="number"
+                        fullWidth
+                        InputProps={{
+                            endAdornment: <InputAdornment position="end">{tokenIn}</InputAdornment>,
+                        }}
+                        // Reduced margin top for the 'From' box
+                        sx={{ mt: 1 }}
+                    />
                 </Grid>
-                <Button variant="contained" color="primary" onClick={handleSwap} fullWidth sx={{ mt: 2 }}>
-                    Swap
-                </Button>
-            </CardContent>
-        </Card>
+                <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center', my: -2 }}>
+                    <IconButton onClick={handleTokenSwap} color="primary">
+                        <SwapVertIcon />
+                    </IconButton>
+                </Grid>
+                <Grid item xs={12}>
+                    <TextField
+                        label="To (estimated)"
+                        value={amountIn && (amountIn * exchangeRate).toFixed(2)} // Replace with real conversion logic
+                        InputProps={{
+                            readOnly: true,
+                            endAdornment: <InputAdornment position="end">{tokenOut}</InputAdornment>,
+                        }}
+                        fullWidth
+                        // Reduced margin top for the 'To' box
+                        sx={{ mt: 1 }}
+                    />
+                </Grid>
+            </Grid>
+            <Button variant="contained" color="primary" onClick={handleSwap} fullWidth sx={{ mt: 2 }}>
+                Swap
+            </Button>
+        </CustomCard>
     );
 };
 
@@ -235,104 +249,114 @@ const Index: NextPage = () => {
                         </AccordionSummary>
                         <AccordionDetails>
                             <CardContent>
-                                <Card variant="outlined" style={{ marginBottom: 16 }}>
-                                    <CardContent>
-                                        <Typography variant="h6">Proposal Details</Typography>
-                                        <Typography variant="subtitle1" color="textSecondary">
-                                            Description:
-                                        </Typography>
-                                        <Typography variant="body1" style={{ marginTop: 4 }}>
-                                            <Link
-                                                href={proposal.descriptionUrl}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                style={{ textDecoration: 'none', color: '#1976d2' }}
-                                            >
-                                                {proposal.descriptionUrl}
-                                            </Link>
-                                        </Typography>
-                                    </CardContent>
-                                </Card>
+                                <CustomCard>
+                                    <Typography variant="h6" style={{ marginBottom: 8, fontWeight: 'bold' }}>
+                                        Proposal Details
+                                    </Typography>
+
+                                    <Typography
+                                        variant="subtitle1"
+                                        color="textSecondary"
+                                        style={{ fontWeight: 'medium' }}
+                                    >
+                                        Description
+                                    </Typography>
+                                    <Typography variant="body1" style={{ marginTop: 4, marginBottom: 12 }}>
+                                        <Link
+                                            href={proposal.descriptionUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            style={{
+                                                textDecoration: 'none',
+                                                color: '#1976d2',
+                                                fontWeight: 'medium',
+                                            }}
+                                        >
+                                            {proposal.descriptionUrl}
+                                        </Link>
+                                    </Typography>
+
+                                    <Typography
+                                        variant="subtitle1"
+                                        color="textSecondary"
+                                        style={{ fontWeight: 'medium' }}
+                                    >
+                                        Slot Enqueued
+                                    </Typography>
+                                    <Typography variant="body1" style={{ marginTop: 4 }}>
+                                        {proposal.slotEnqueued}
+                                    </Typography>
+                                </CustomCard>
 
                                 <Grid container spacing={2}>
                                     {/* META Balance Card */}
                                     <Grid item xs={6}>
-                                        <Card variant="outlined">
-                                            <CardContent>
-                                                <Typography variant="h6">Conditional META Balances</Typography>
-                                                <Typography>
-                                                    Conditional-on-Pass: {proposal.conditionalBalances.passMETA} META
-                                                </Typography>
-                                                <Typography>
-                                                    Conditional-on-Fail: {proposal.conditionalBalances.failMETA} META
-                                                </Typography>
-                                                <Grid
-                                                    container
-                                                    spacing={1}
-                                                    alignItems="center"
-                                                    style={{ marginTop: 16 }}
-                                                >
-                                                    <Grid item xs>
-                                                        <TextField
-                                                            fullWidth
-                                                            label="Amount"
-                                                            variant="outlined"
-                                                            type="number"
-                                                            // Optional: Add a state to handle the input value
-                                                        />
-                                                    </Grid>
-                                                    <Grid item>
-                                                        <Button
-                                                            variant="contained"
-                                                            color="primary"
-                                                            //   onClick={() => handleDepositMeta(proposal.id, /* amount from state */)}
-                                                        >
-                                                            Deposit META
-                                                        </Button>
-                                                    </Grid>
+                                        <CustomCard>
+                                            <Typography variant="h6" style={{ marginBottom: 8, fontWeight: 'bold' }}>
+                                                Conditional META Balances
+                                            </Typography>
+                                            <Typography>
+                                                Conditional-on-Pass: {proposal.conditionalBalances.passMETA} META
+                                            </Typography>
+                                            <Typography>
+                                                Conditional-on-Fail: {proposal.conditionalBalances.failMETA} META
+                                            </Typography>
+                                            <Grid container spacing={1} alignItems="center" style={{ marginTop: 16 }}>
+                                                <Grid item xs>
+                                                    <TextField
+                                                        fullWidth
+                                                        label="Amount"
+                                                        variant="outlined"
+                                                        type="number"
+                                                        // Optional: Add a state to handle the input value
+                                                    />
                                                 </Grid>
-                                            </CardContent>
-                                        </Card>
+                                                <Grid item>
+                                                    <Button
+                                                        variant="contained"
+                                                        color="primary"
+                                                        //   onClick={() => handleDepositMeta(proposal.id, /* amount from state */)}
+                                                    >
+                                                        Deposit META
+                                                    </Button>
+                                                </Grid>
+                                            </Grid>
+                                        </CustomCard>
                                     </Grid>
 
                                     {/* USDC Balance Card */}
                                     <Grid item xs={6}>
-                                        <Card variant="outlined">
-                                            <CardContent>
-                                                <Typography variant="h6">Conditional USDC Balances</Typography>
-                                                <Typography>
-                                                    Conditional-on-Pass: {proposal.conditionalBalances.passUSDC} USDC
-                                                </Typography>
-                                                <Typography>
-                                                    Conditional-on-Fail: {proposal.conditionalBalances.failUSDC} USDC
-                                                </Typography>
-                                                <Grid
-                                                    container
-                                                    spacing={1}
-                                                    alignItems="center"
-                                                    style={{ marginTop: 16 }}
-                                                >
-                                                    <Grid item xs>
-                                                        <TextField
-                                                            fullWidth
-                                                            label="Amount"
-                                                            variant="outlined"
-                                                            type="number"
-                                                            // Optional: Add a state to handle the input value
-                                                        />
-                                                    </Grid>
-                                                    <Grid item>
-                                                        <Button
-                                                            variant="contained"
-                                                            color="primary"
-                                                            //   onClick={() => handleDepositUsdc(proposal.id, /* amount from state */)}
-                                                        >
-                                                            Deposit USDC
-                                                        </Button>
-                                                    </Grid>
+                                        <CustomCard>
+                                            <Typography variant="h6" style={{ marginBottom: 8, fontWeight: 'bold' }}>
+                                                Conditional USDC Balances
+                                            </Typography>
+                                            <Typography>
+                                                Conditional-on-Pass: {proposal.conditionalBalances.passUSDC} USDC
+                                            </Typography>
+                                            <Typography>
+                                                Conditional-on-Fail: {proposal.conditionalBalances.failUSDC} USDC
+                                            </Typography>
+                                            <Grid container spacing={1} alignItems="center" style={{ marginTop: 16 }}>
+                                                <Grid item xs>
+                                                    <TextField
+                                                        fullWidth
+                                                        label="Amount"
+                                                        variant="outlined"
+                                                        type="number"
+                                                        // Optional: Add a state to handle the input value
+                                                    />
                                                 </Grid>
-                                            </CardContent>
-                                        </Card>
+                                                <Grid item>
+                                                    <Button
+                                                        variant="contained"
+                                                        color="primary"
+                                                        //   onClick={() => handleDepositUsdc(proposal.id, /* amount from state */)}
+                                                    >
+                                                        Deposit USDC
+                                                    </Button>
+                                                </Grid>
+                                            </Grid>
+                                        </CustomCard>
                                     </Grid>
                                 </Grid>
 
