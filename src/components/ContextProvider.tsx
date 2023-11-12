@@ -1,12 +1,12 @@
 import { createTheme, StyledEngineProvider, ThemeProvider } from '@mui/material';
-import { deepPurple, pink } from '@mui/material/colors';
+import { blue, red, deepPurple, pink } from '@mui/material/colors';
 import { WalletModalProvider as AntDesignWalletModalProvider } from '@solana/wallet-adapter-ant-design';
 import type { Adapter, WalletError } from '@solana/wallet-adapter-base';
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import { WalletDialogProvider as MaterialUIWalletDialogProvider } from '@solana/wallet-adapter-material-ui';
 import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
 import { WalletModalProvider as ReactUIWalletModalProvider } from '@solana/wallet-adapter-react-ui';
-import { UnsafeBurnerWalletAdapter } from '@solana/wallet-adapter-wallets';
+import { SolflareWalletAdapter } from '@solana/wallet-adapter-wallets';
 import { type SolanaSignInInput } from '@solana/wallet-standard-features';
 import { verifySignIn } from '@solana/wallet-standard-util';
 import { clusterApiUrl } from '@solana/web3.js';
@@ -19,10 +19,10 @@ const theme = createTheme({
     palette: {
         mode: 'dark',
         primary: {
-            main: deepPurple[700],
+            main: blue[700],
         },
         secondary: {
-            main: pink[700],
+            main: red[700],
         },
     },
     components: {
@@ -73,7 +73,7 @@ const WalletContextProvider: FC<{ children: ReactNode }> = ({ children }) => {
              * instantiate its legacy wallet adapter here. Common legacy adapters can be found
              * in the npm package `@solana/wallet-adapter-wallets`.
              */
-            new UnsafeBurnerWalletAdapter(),
+            new SolflareWalletAdapter(),
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
         [network]

@@ -32,6 +32,7 @@ import AccordionDetails from '@mui/material/AccordionDetails';
 import Typography from '@mui/material/Typography';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SwapVertIcon from '@mui/icons-material/SwapVert';
+import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 
 const MaterialUIWalletConnectButtonDynamic = dynamic(
     async () => (await import('@solana/wallet-adapter-material-ui')).WalletConnectButton,
@@ -168,6 +169,10 @@ const SwapComponent: React.FC<SwapComponentProps> = ({ onSwap, exchangeRate }) =
 
 const Index: NextPage = () => {
     const { autoConnect, setAutoConnect } = useAutoConnect();
+    const { connection } = useConnection();
+    const { publicKey, sendTransaction, wallet } = useWallet();
+
+    console.log(publicKey?.toBase58())
 
     const proposals = [
         {
@@ -207,6 +212,9 @@ const Index: NextPage = () => {
                         <Typography variant="h2" gutterBottom>
                             Proposals
                         </Typography>
+                    </Grid>
+                    <Grid item>
+                        <SendLegacyTransactionDynamic />
                     </Grid>
                     <Grid item>
                         <MaterialUIWalletMultiButtonDynamic />
