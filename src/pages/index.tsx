@@ -33,8 +33,6 @@ import Typography from '@mui/material/Typography';
 import { useConnection, useAnchorWallet } from '@solana/wallet-adapter-react';
 import * as anchor from '@coral-xyz/anchor';
 import * as token from '@solana/spl-token';
-import { CustomCard } from '../components/CustomCard';
-import { Swap } from '../components/Swap';
 
 import { AutocratV0 } from '../idl/autocrat_v0';
 import { Proposal } from '../components/Proposal';

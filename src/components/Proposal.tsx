@@ -12,6 +12,19 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { Swap } from './Swap';
 import { CustomCard } from './CustomCard';
+import { useState, useEffect } from 'react';
+import { useConnection, useAnchorWallet } from '@solana/wallet-adapter-react';
+
+import * as anchor from '@coral-xyz/anchor';
+import * as token from '@solana/spl-token';
+
+import { AutocratV0 } from '../idl/autocrat_v0';
+const AutocratIDL: AutocratV0 = require('../idl/autocrat_v0.json');
+const AUTOCRAT_PROGRAM_ID = new anchor.web3.PublicKey('meta3cxKzFBmWYgCVozmvCQAS3y9b3fGxrG9HkHL7Wi');
+
+import { ConditionalVault } from '../idl/conditional_vault';
+const ConditionalVaultIDL: ConditionalVault = require('../idl/conditional_vault.json');
+const CONDITIONAL_VAULT_PROGRAM_ID = new anchor.web3.PublicKey('vaU1tVLj8RFk7mNj1BxqgAsMKKaL8UvEUHvU3tdbZPe');
 
 const getStatusColor = (status: string) => {
     switch (status) {
@@ -27,6 +40,75 @@ const getStatusColor = (status: string) => {
 };
 
 export const Proposal = ({ proposal }) => {
+    const { connection } = useConnection();
+    const wallet = useAnchorWallet();
+
+    const [userConditionalOnPassMetaBalance, setUserConditionalOnPassMetaBalance] = useState(0);
+    const [userConditionalOnFailMetaBalance, setUserConditionalOnFailMetaBalance] = useState(0);
+    
+    const [userConditionalOnPassUsdcBalance, setUserConditionalOnPassUsdcBalance] = useState(0);
+    const [userConditionalOnFailUsdcBalance, setUserConditionalOnFailUsdcBalance] = useState(0);
+
+    useEffect(() => {
+        if (wallet && connection) {
+            const provider = new anchor.AnchorProvider(connection, wallet as anchor.Wallet, {});
+            const autocrat = new anchor.Program(AutocratIDL, AUTOCRAT_PROGRAM_ID, provider);
+            const conditionalVault = new anchor.Program(ConditionalVaultIDL, CONDITIONAL_VAULT_PROGRAM_ID, provider);
+
+            conditionalVault.account.conditionalVault.fetch(proposal.baseVault).then((vault) => {
+                let conditionalOnPassMetaMint = vault.conditionalOnFinalizeTokenMint;
+                let conditionalOnFailMetaMint = vault.conditionalOnRevertTokenMint;
+
+                const passAcc = token.getAssociatedTokenAddressSync(conditionalOnPassMetaMint, wallet.publicKey);
+                const failAcc = token.getAssociatedTokenAddressSync(conditionalOnFailMetaMint, wallet.publicKey);
+
+                token
+                    .getAccount(connection, passAcc)
+                    .then((metaAcc) => {
+                        setUserConditionalOnPassMetaBalance(Number(metaAcc.amount));
+                    })
+                    .catch((err) => {
+                        console.error("User doesn't have a conditional-on-pass META account");
+                    });
+
+                token
+                    .getAccount(connection, failAcc)
+                    .then((metaAcc) => {
+                        setUserConditionalOnFailMetaBalance(Number(metaAcc.amount));
+                    })
+                    .catch((err) => {
+                        console.error("User doesn't have a conditional-on-fail META account");
+                    });
+            })
+
+            conditionalVault.account.conditionalVault.fetch(proposal.quoteVault).then((vault) => {
+                let conditionalOnPassUsdcMint = vault.conditionalOnFinalizeTokenMint;
+                let conditionalOnFailUsdcMint = vault.conditionalOnRevertTokenMint;
+
+                const passAcc = token.getAssociatedTokenAddressSync(conditionalOnPassUsdcMint, wallet.publicKey);
+                const failAcc = token.getAssociatedTokenAddressSync(conditionalOnFailUsdcMint, wallet.publicKey);
+
+                token
+                    .getAccount(connection, passAcc)
+                    .then((usdcAcc) => {
+                        setUserConditionalOnPassUsdcBalance(Number(usdcAcc.amount));
+                    })
+                    .catch((err) => {
+                        console.error("User doesn't have a conditional-on-pass USDC account");
+                    });
+
+                token
+                    .getAccount(connection, failAcc)
+                    .then((usdcAcc) => {
+                        setUserConditionalOnFailUsdcBalance(Number(usdcAcc.amount));
+                    })
+                    .catch((err) => {
+                        console.error("User doesn't have a conditional-on-fail USDC account");
+                    });
+            })
+        }
+    })
+
     return (
         <Accordion key={proposal.number}>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
@@ -84,8 +166,8 @@ export const Proposal = ({ proposal }) => {
                                 <Typography variant="h6" style={{ marginBottom: 8, fontWeight: 'bold' }}>
                                     Conditional META Balances
                                 </Typography>
-                                <Typography>Conditional-on-Pass: 100 META</Typography>
-                                <Typography>Conditional-on-Fail: 329 META</Typography>
+                                <Typography>Conditional-on-Pass: {userConditionalOnPassMetaBalance / 1_000_000_000} META</Typography>
+                                <Typography>Conditional-on-Fail: {userConditionalOnFailMetaBalance /  1_000_000_000} META</Typography>
                                 <Grid container spacing={1} alignItems="center" style={{ marginTop: 16 }}>
                                     <Grid item xs>
                                         <TextField
@@ -115,8 +197,8 @@ export const Proposal = ({ proposal }) => {
                                 <Typography variant="h6" style={{ marginBottom: 8, fontWeight: 'bold' }}>
                                     Conditional USDC Balances
                                 </Typography>
-                                <Typography>Conditional-on-Pass: 100 USDC</Typography>
-                                <Typography>Conditional-on-Fail: 203 USDC</Typography>
+                                <Typography>Conditional-on-Pass: {userConditionalOnPassUsdcBalance / 1_000_000} USDC</Typography>
+                                <Typography>Conditional-on-Fail: {userConditionalOnFailUsdcBalance / 1_000_000} USDC</Typography>
                                 <Grid container spacing={1} alignItems="center" style={{ marginTop: 16 }}>
                                     <Grid item xs>
                                         <TextField
