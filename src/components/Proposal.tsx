@@ -12,8 +12,9 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { Swap } from './Swap';
 import { CustomCard } from './CustomCard';
-import { useState, useEffect } from 'react';
-import { useConnection, useAnchorWallet } from '@solana/wallet-adapter-react';
+import { useState, useEffect, useCallback } from 'react';
+import { useConnection, useAnchorWallet, useWallet } from '@solana/wallet-adapter-react';
+import { useNotify } from './notify';
 
 import * as anchor from '@coral-xyz/anchor';
 import * as token from '@solana/spl-token';
@@ -42,12 +43,113 @@ const getStatusColor = (status: string) => {
 export const Proposal = ({ proposal }) => {
     const { connection } = useConnection();
     const wallet = useAnchorWallet();
+    const { sendTransaction } = useWallet();
+    const notify = useNotify();
 
     const [userConditionalOnPassMetaBalance, setUserConditionalOnPassMetaBalance] = useState(0);
     const [userConditionalOnFailMetaBalance, setUserConditionalOnFailMetaBalance] = useState(0);
-    
+
     const [userConditionalOnPassUsdcBalance, setUserConditionalOnPassUsdcBalance] = useState(0);
     const [userConditionalOnFailUsdcBalance, setUserConditionalOnFailUsdcBalance] = useState(0);
+
+    const [metaDepositAmount, setMetaDepositAmount] = useState(0);
+    const [usdcDepositAmount, setUsdcDepositAmount] = useState(0);
+
+    // Handle Deposit META
+    const handleDepositMeta = async (amount) => {
+        console.log(amount)
+        if (!wallet) {
+            console.error('Wallet not connected');
+            return;
+        }
+
+        try {
+            const provider = new anchor.AnchorProvider(connection, wallet, {});
+            const program = new anchor.Program(ConditionalVaultIDL, CONDITIONAL_VAULT_PROGRAM_ID, provider);
+
+            const {
+                context: { slot: minContextSlot },
+                value: { blockhash, lastValidBlockHeight },
+            } = await connection.getLatestBlockhashAndContext();
+
+            const storedVault = await program.account.conditionalVault.fetch(proposal.baseVault);
+
+            const userUnderlyingTokenAccount = token.getAssociatedTokenAddressSync(
+                storedVault.underlyingTokenMint,
+                wallet.publicKey
+            );
+
+            console.log(userUnderlyingTokenAccount.toBase58())
+
+            let preInstructions = [];
+
+            const userConditionalOnFinalizeTokenAccount = token.getAssociatedTokenAddressSync(
+                storedVault.conditionalOnFinalizeTokenMint,
+                wallet.publicKey
+            );
+
+            if ((await connection.getBalance(userConditionalOnFinalizeTokenAccount)) == 0) {
+                preInstructions.push(
+                    token.createAssociatedTokenAccountInstruction(
+                        wallet.publicKey,
+                        userConditionalOnFinalizeTokenAccount,
+                        wallet.publicKey,
+                        storedVault.conditionalOnFinalizeTokenMint
+                    )
+                );
+            }
+
+            const userConditionalOnRevertTokenAccount = token.getAssociatedTokenAddressSync(
+                        storedVault.conditionalOnRevertTokenMint,
+                        wallet.publicKey
+                    );
+
+            if ((await connection.getBalance(userConditionalOnRevertTokenAccount)) == 0) {
+                preInstructions.push(
+                    token.createAssociatedTokenAccountInstruction(
+                        wallet.publicKey,
+                        userConditionalOnRevertTokenAccount,
+                        wallet.publicKey,
+                        storedVault.conditionalOnRevertTokenMint
+                    )
+                );
+            }
+
+            console.log(await connection.getBalance(userConditionalOnFinalizeTokenAccount));
+
+            const bnAmount = new anchor.BN(amount * 1_000_000_000);
+
+            const mintTx = await program.methods
+                .mintConditionalTokens(bnAmount)
+                .accounts({
+                    authority: wallet.publicKey,
+                    vault: proposal.baseVault,
+                    vaultUnderlyingTokenAccount: storedVault.underlyingTokenAccount,
+                    userUnderlyingTokenAccount,
+                    conditionalOnFinalizeTokenMint: storedVault.conditionalOnFinalizeTokenMint,
+                    userConditionalOnFinalizeTokenAccount,
+                    conditionalOnRevertTokenMint: storedVault.conditionalOnRevertTokenMint,
+                    userConditionalOnRevertTokenAccount,
+                })
+                .preInstructions(preInstructions)
+                .transaction();
+
+            await sendTransaction(mintTx, connection);
+
+            console.log(mintTx);
+
+            notify('success', 'META tokens deposited successfully');
+        } catch (error) {
+            console.error('Error depositing META tokens:', error);
+            notify('error', `Error depositing META tokens: ${error.message}`);
+        }
+    };
+
+    // Handle Deposit USDC
+    const handleDepositUsdc = async (amount) => {
+        // Implement the deposit logic here, similar to your second code snippet
+        // Use usdcDepositAmount as the amount to deposit
+    };
 
     useEffect(() => {
         if (wallet && connection) {
@@ -79,7 +181,7 @@ export const Proposal = ({ proposal }) => {
                     .catch((err) => {
                         console.error("User doesn't have a conditional-on-fail META account");
                     });
-            })
+            });
 
             conditionalVault.account.conditionalVault.fetch(proposal.quoteVault).then((vault) => {
                 let conditionalOnPassUsdcMint = vault.conditionalOnFinalizeTokenMint;
@@ -105,9 +207,49 @@ export const Proposal = ({ proposal }) => {
                     .catch((err) => {
                         console.error("User doesn't have a conditional-on-fail USDC account");
                     });
-            })
+            });
         }
-    })
+    });
+
+    // const onClick = useCallback(async () => {
+    //     let signature: TransactionSignature | undefined = undefined;
+    //     try {
+    //         if (!wallet) throw new Error('Wallet not connected!');
+    //         // if (!supportedTransactionVersions) throw new Error("Wallet doesn't support versioned transactions!");
+    //         // if (!supportedTransactionVersions.has('legacy'))
+    //         //     throw new Error("Wallet doesn't support legacy transactions!");
+
+    //         const {
+    //             context: { slot: minContextSlot },
+    //             value: { blockhash, lastValidBlockHeight },
+    //         } = await connection.getLatestBlockhashAndContext();
+
+    //         const conditionalVault = new anchor.Program(ConditionalVaultIDL, CONDITIONAL_VAULT_PROGRAM_ID, provider);
+
+    //         // conditionalVault.methods.mintConditionalTokens()
+
+    //         const message = new TransactionMessage({
+    //             payerKey: publicKey,
+    //             recentBlockhash: blockhash,
+    //             instructions: [
+    //                 {
+    //                     data: Buffer.from('Hello, from the Solana Wallet Adapter example app!'),
+    //                     keys: [],
+    //                     programId: new PublicKey('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr'),
+    //                 },
+    //             ],
+    //         });
+    //         const transaction = new VersionedTransaction(message.compileToLegacyMessage());
+
+    //         signature = await sendTransaction(transaction, connection, { minContextSlot });
+    //         notify('info', 'Transaction sent:', signature);
+
+    //         await connection.confirmTransaction({ blockhash, lastValidBlockHeight, signature });
+    //         notify('success', 'Transaction successful!', signature);
+    //     } catch (error: any) {
+    //         notify('error', `Transaction failed! ${error?.message}`, signature);
+    //     }
+    // }, [wallet, supportedTransactionVersions, connection, sendTransaction, notify]);
 
     return (
         <Accordion key={proposal.number}>
@@ -166,8 +308,12 @@ export const Proposal = ({ proposal }) => {
                                 <Typography variant="h6" style={{ marginBottom: 8, fontWeight: 'bold' }}>
                                     Conditional META Balances
                                 </Typography>
-                                <Typography>Conditional-on-Pass: {userConditionalOnPassMetaBalance / 1_000_000_000} META</Typography>
-                                <Typography>Conditional-on-Fail: {userConditionalOnFailMetaBalance /  1_000_000_000} META</Typography>
+                                <Typography>
+                                    Conditional-on-Pass: {userConditionalOnPassMetaBalance / 1_000_000_000} META
+                                </Typography>
+                                <Typography>
+                                    Conditional-on-Fail: {userConditionalOnFailMetaBalance / 1_000_000_000} META
+                                </Typography>
                                 <Grid container spacing={1} alignItems="center" style={{ marginTop: 16 }}>
                                     <Grid item xs>
                                         <TextField
@@ -175,14 +321,15 @@ export const Proposal = ({ proposal }) => {
                                             label="Amount"
                                             variant="outlined"
                                             type="number"
-                                            // Optional: Add a state to handle the input value
+                                            value={metaDepositAmount}
+                                            onChange={(e) => setMetaDepositAmount(e.target.value)}
                                         />
                                     </Grid>
                                     <Grid item>
                                         <Button
                                             variant="contained"
                                             color="primary"
-                                            //   onClick={() => handleDepositMeta(proposal.id, /* amount from state */)}
+                                            onClick={() => handleDepositMeta(metaDepositAmount)}
                                         >
                                             Deposit META
                                         </Button>
@@ -197,8 +344,12 @@ export const Proposal = ({ proposal }) => {
                                 <Typography variant="h6" style={{ marginBottom: 8, fontWeight: 'bold' }}>
                                     Conditional USDC Balances
                                 </Typography>
-                                <Typography>Conditional-on-Pass: {userConditionalOnPassUsdcBalance / 1_000_000} USDC</Typography>
-                                <Typography>Conditional-on-Fail: {userConditionalOnFailUsdcBalance / 1_000_000} USDC</Typography>
+                                <Typography>
+                                    Conditional-on-Pass: {userConditionalOnPassUsdcBalance / 1_000_000} USDC
+                                </Typography>
+                                <Typography>
+                                    Conditional-on-Fail: {userConditionalOnFailUsdcBalance / 1_000_000} USDC
+                                </Typography>
                                 <Grid container spacing={1} alignItems="center" style={{ marginTop: 16 }}>
                                     <Grid item xs>
                                         <TextField

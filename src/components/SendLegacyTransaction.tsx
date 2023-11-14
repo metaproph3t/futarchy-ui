@@ -51,7 +51,7 @@ export const SendLegacyTransaction: FC = () => {
     return (
         <Button
             variant="contained"
-            color="secondary"
+            color="primary"
             onClick={onClick}
             disabled={!publicKey || !supportedTransactionVersions?.has('legacy')}
         >
