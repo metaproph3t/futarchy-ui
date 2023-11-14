@@ -165,9 +165,6 @@ const Index: NextPage = () => {
                         </Typography>
                     </Grid>
                     <Grid item>
-                        <SendLegacyTransactionDynamic />
-                    </Grid>
-                    <Grid item>
                         <MaterialUIWalletMultiButtonDynamic />
                     </Grid>
                 </Grid>
