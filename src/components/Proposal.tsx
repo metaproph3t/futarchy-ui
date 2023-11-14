@@ -195,7 +195,7 @@ export const Proposal = ({ proposal }) => {
                         </Grid>
                     </Grid>
 
-                    <Swap onSwap={() => {}} exchangeRate={1} />
+                    <Swap onSwap={() => {}} passTwapMarket={proposal.openbookTwapPassMarket} failTwapMarket={proposal.openbookTwapFailMarket} />
                 </CardContent>
             </AccordionDetails>
         </Accordion>

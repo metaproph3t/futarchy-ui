@@ -95,8 +95,6 @@ export const ConditionalTokenDeposit = ({ vault, tokenSymbol, scaleDecimals }) =
                 wallet.publicKey
             );
 
-            console.log(userUnderlyingTokenAccount.toBase58());
-
             let preInstructions = [];
 
             const userConditionalOnFinalizeTokenAccount = token.getAssociatedTokenAddressSync(
@@ -130,8 +128,6 @@ export const ConditionalTokenDeposit = ({ vault, tokenSymbol, scaleDecimals }) =
                     )
                 );
             }
-
-            console.log(await connection.getBalance(userConditionalOnFinalizeTokenAccount));
 
             const bnAmount = new anchor.BN(amount);
 

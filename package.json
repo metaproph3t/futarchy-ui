@@ -42,6 +42,7 @@
         "@mui/icons-material": "^5.11.16",
         "@mui/material": "^5.13.5",
         "@noble/curves": "^1.1.0",
+        "@openbook-dex/openbook-v2": "^0.0.12",
         "@solana/spl-token": "^0.3.8",
         "@solana/wallet-adapter-ant-design": "workspace:^",
         "@solana/wallet-adapter-base": "workspace:^",
