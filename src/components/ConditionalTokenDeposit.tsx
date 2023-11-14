@@ -161,8 +161,12 @@ export const ConditionalTokenDeposit = ({ vault, tokenSymbol, scaleDecimals }) =
             <Typography variant="h6" style={{ marginBottom: 8, fontWeight: 'bold' }}>
                 Conditional {tokenSymbol} Balances
             </Typography>
-            <Typography>Conditional-on-Pass: {userConditionalOnPassBalance / scaleDecimals} {tokenSymbol}</Typography>
-            <Typography>Conditional-on-Fail: {userConditionalOnFailBalance / scaleDecimals} {tokenSymbol}</Typography>
+            <Typography>
+                Conditional-on-Pass: {userConditionalOnPassBalance / scaleDecimals} {tokenSymbol}
+            </Typography>
+            <Typography>
+                Conditional-on-Fail: {userConditionalOnFailBalance / scaleDecimals} {tokenSymbol}
+            </Typography>
             <Grid container spacing={1} alignItems="center" style={{ marginTop: 16 }}>
                 <Grid item xs>
                     <TextField
@@ -175,7 +179,11 @@ export const ConditionalTokenDeposit = ({ vault, tokenSymbol, scaleDecimals }) =
                     />
                 </Grid>
                 <Grid item>
-                    <Button variant="contained" color="primary" onClick={() => handleDeposit(depositAmount * scaleDecimals)}>
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={() => handleDeposit(depositAmount * scaleDecimals)}
+                    >
                         Deposit {tokenSymbol}
                     </Button>
                 </Grid>

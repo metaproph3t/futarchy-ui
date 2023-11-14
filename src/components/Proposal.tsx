@@ -186,16 +186,28 @@ export const Proposal = ({ proposal }) => {
                     <Grid container spacing={2}>
                         {/* META Balance Card */}
                         <Grid item xs={6}>
-                            <ConditionalTokenDeposit vault={proposal.baseVault} tokenSymbol="META" scaleDecimals={1_000_000_000} />
+                            <ConditionalTokenDeposit
+                                vault={proposal.baseVault}
+                                tokenSymbol="META"
+                                scaleDecimals={1_000_000_000}
+                            />
                         </Grid>
 
                         {/* USDC Balance Card */}
                         <Grid item xs={6}>
-                            <ConditionalTokenDeposit vault={proposal.quoteVault} tokenSymbol="USDC" scaleDecimals={1_000_000} />
+                            <ConditionalTokenDeposit
+                                vault={proposal.quoteVault}
+                                tokenSymbol="USDC"
+                                scaleDecimals={1_000_000}
+                            />
                         </Grid>
                     </Grid>
 
-                    <Swap onSwap={() => {}} passTwapMarket={proposal.openbookTwapPassMarket} failTwapMarket={proposal.openbookTwapFailMarket} />
+                    <Swap
+                        onSwap={() => {}}
+                        passTwapMarket={proposal.openbookTwapPassMarket}
+                        failTwapMarket={proposal.openbookTwapFailMarket}
+                    />
                 </CardContent>
             </AccordionDetails>
         </Accordion>
