@@ -15,6 +15,7 @@ import {
 import SwapVertIcon from '@mui/icons-material/SwapVert';
 
 import { useConnection, useAnchorWallet, useWallet } from '@solana/wallet-adapter-react';
+import { useNotify } from './notify';
 
 import { OpenbookTwap } from '../idl/openbook_twap';
 const OpenbookTwapIDL: OpenbookTwap = require('../idl/openbook_twap.json');
@@ -77,6 +78,8 @@ export const Swap = ({ onSwap, passTwapMarket, failTwapMarket }) => {
     const [marketType, setMarketType] = useState('pass'); // 'pass' or 'fail'
     const { connection } = useConnection();
     const wallet = useAnchorWallet();
+    const { sendTransaction } = useWallet();
+    const notify = useNotify();
 
     const handleAmountInChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const newAmountIn = event.target.value;
@@ -95,9 +98,107 @@ export const Swap = ({ onSwap, passTwapMarket, failTwapMarket }) => {
         // Add logic to recalculate the amount based on the new tokens
     };
 
-    const handleSwap = () => {
-        onSwap(amountIn, tokenIn, tokenOut, marketType);
-        // Reset the input or perform additional actions after swap
+    const handleSwap = async () => {
+        let signature: anchor.web3.TransactionSignature | undefined = undefined;
+        try {
+            if (!wallet || !connection) return;
+
+            // Ensure input validations
+            const inputAmount = parseFloat(amountIn);
+            if (!inputAmount || isNaN(inputAmount)) return;
+
+            let isBuying = tokenIn === 'USDC' && tokenOut === 'META';
+            let side = isBuying ? { bid: {} } : { ask: {} };
+
+            const provider = new anchor.AnchorProvider(connection, wallet as anchor.Wallet, {});
+
+            const openbookTwap = new anchor.Program<OpenbookTwap>(OpenbookTwapIDL, OPENBOOK_TWAP_PROGRAM_ID, provider);
+            const openbook = new anchor.Program<OpenbookV2>(OpenbookV2IDL, OPENBOOK_PROGRAM_ID, provider);
+
+            let twapMarket = marketType === 'pass' ? passTwapMarket : failTwapMarket;
+            const storedTwapMarket = await openbookTwap.account.twapMarket.fetch(twapMarket);
+            const storedMarket = await openbook.account.market.fetch(storedTwapMarket.market);
+
+            let maxBaseLots, maxQuoteLotsIncludingFees;
+
+            if (isBuying) {
+                maxBaseLots = new anchor.BN(1_000_000_000); // Large number for base lots when buying
+                maxQuoteLotsIncludingFees = new anchor.BN(inputAmount * 10_000); // Adjusted for USDC decimals
+            } else {
+                maxBaseLots = new anchor.BN(inputAmount); // Adjusted for META decimals
+                maxQuoteLotsIncludingFees = new anchor.BN(1_000_000); // Large number for quote lots when selling
+            }
+
+            let buyArgs: PlaceOrderArgs = {
+                side,
+                priceLots: new anchor.BN(13_00), // 1 USDC for 1 META
+                maxBaseLots,
+                maxQuoteLotsIncludingFees,
+                clientOrderId: new anchor.BN(1),
+                orderType: { market: {} },
+                expiryTimestamp: new anchor.BN(0),
+                selfTradeBehavior: { decrementTake: {} },
+                limit: 255,
+            };
+
+            let preInstructions = [];
+
+            const userQuoteAccount = token.getAssociatedTokenAddressSync(storedMarket.quoteMint, wallet.publicKey);
+
+            if ((await connection.getBalance(userQuoteAccount)) == 0) {
+                preInstructions.push(
+                    token.createAssociatedTokenAccountInstruction(
+                        wallet.publicKey,
+                        userQuoteAccount,
+                        wallet.publicKey,
+                        storedMarket.quoteMint
+                    )
+                );
+            }
+
+            const userBaseAccount = token.getAssociatedTokenAddressSync(storedMarket.baseMint, wallet.publicKey);
+
+            if ((await connection.getBalance(userBaseAccount)) == 0) {
+                preInstructions.push(
+                    token.createAssociatedTokenAccountInstruction(
+                        wallet.publicKey,
+                        userBaseAccount,
+                        wallet.publicKey,
+                        storedMarket.baseMint
+                    )
+                );
+            }
+
+            const {
+                value: { blockhash, lastValidBlockHeight },
+            } = await connection.getLatestBlockhashAndContext();
+
+            let tx = await openbookTwap.methods
+                .placeTakeOrder(buyArgs)
+                .accounts({
+                    asks: storedMarket.asks,
+                    bids: storedMarket.bids,
+                    eventHeap: storedMarket.eventHeap,
+                    market: storedTwapMarket.market,
+                    marketAuthority: storedMarket.marketAuthority,
+                    marketBaseVault: storedMarket.marketBaseVault,
+                    marketQuoteVault: storedMarket.marketQuoteVault,
+                    userQuoteAccount,
+                    userBaseAccount,
+                    twapMarket,
+                    openbookProgram: OPENBOOK_PROGRAM_ID,
+                })
+                .preInstructions(preInstructions)
+                .transaction();
+
+            signature = await sendTransaction(tx, connection);
+            notify('info', 'Transaction sent:', signature);
+
+            await connection.confirmTransaction({ blockhash, lastValidBlockHeight, signature });
+            notify('success', 'Transaction successful!', signature);
+        } catch (error: any) {
+            notify('error', `Transaction failed! ${error?.message}`, signature);
+        }
     };
 
     const simulateSwap = async (inputAmount) => {
@@ -118,11 +219,26 @@ export const Swap = ({ onSwap, passTwapMarket, failTwapMarket }) => {
 
             const storedMarket = await openbook.account.market.fetch(storedTwapMarket.market);
 
+            // let [maxBaseLots, maxQuoteLotsIncludingFees] = isBuying ? [new anchor.BN(100_000).muln(1_000_000), new anchor.BN(inputAmount * 10_000)] :
+            //     [new anchor.BN(inputAmount), new anchor.BN(10_000_000_000).muln(1_000_0000)];
+
+            let maxBaseLots, maxQuoteLotsIncludingFees;
+
+            if (isBuying) {
+                maxBaseLots = new anchor.BN(1_000_000_000); // Large number for base lots when buying
+                maxQuoteLotsIncludingFees = new anchor.BN(inputAmount * 10_000); // Adjusted for USDC decimals
+            } else {
+                maxBaseLots = new anchor.BN(inputAmount); // Adjusted for META decimals
+                maxQuoteLotsIncludingFees = new anchor.BN(1_000_000); // Large number for quote lots when selling
+            }
+
+            console.log(inputAmount);
+
             let buyArgs: PlaceOrderArgs = {
                 side,
-                priceLots: new anchor.BN(13_00), // 1 USDC for 1 META
-                maxBaseLots: new anchor.BN(inputAmount),
-                maxQuoteLotsIncludingFees: new anchor.BN(1_000_000_000), // 10 USDC
+                priceLots: new anchor.BN(130000_00), // 1 USDC for 1 META
+                maxBaseLots,
+                maxQuoteLotsIncludingFees,
                 clientOrderId: new anchor.BN(1),
                 orderType: { market: {} },
                 expiryTimestamp: new anchor.BN(0),
@@ -189,6 +305,8 @@ export const Swap = ({ onSwap, passTwapMarket, failTwapMarket }) => {
                 userQuoteAccount,
             ]);
 
+            console.log(sim);
+
             const userBaseBalanceAfter = token.unpackAccount(userBaseAccount.address, {
                 data: Buffer.from(
                     Buffer.from(sim.value.accounts[0].data[0], sim.value.accounts[0].data[1] as BufferEncoding)
@@ -197,6 +315,7 @@ export const Swap = ({ onSwap, passTwapMarket, failTwapMarket }) => {
                 lamports: 0,
                 owner: token.TOKEN_PROGRAM_ID,
             }).amount;
+            console.log(userBaseBalanceAfter);
 
             const userQuoteBalanceAfter = token.unpackAccount(userQuoteAccount.address, {
                 data: Buffer.from(
@@ -206,10 +325,11 @@ export const Swap = ({ onSwap, passTwapMarket, failTwapMarket }) => {
                 lamports: 0,
                 owner: token.TOKEN_PROGRAM_ID,
             }).amount;
+            console.log(userQuoteBalanceAfter);
 
             let simulatedAmountAfterTransaction = isBuying
                 ? ((Number(userBaseBalanceAfter) - userBaseBalanceBefore) / 1_000_000_000).toFixed(2)
-                : ((Number(userQuoteBalanceAfter) - userQuoteBalanceBefore) / 1_000_000).toFixed(2);
+                : ((Number(userQuoteBalanceAfter) - userQuoteBalanceBefore) / 10_000).toFixed(2);
 
             return simulatedAmountAfterTransaction;
         }
@@ -262,13 +382,7 @@ export const Swap = ({ onSwap, passTwapMarket, failTwapMarket }) => {
                     />
                 </Grid>
             </Grid>
-            <Button
-                variant="contained"
-                color="primary"
-                onClick={() => simulateSwap(parseInt(amountIn))}
-                fullWidth
-                sx={{ mt: 2 }}
-            >
+            <Button variant="contained" color="primary" onClick={handleSwap} fullWidth sx={{ mt: 2 }}>
                 Swap
             </Button>
         </CustomCard>
