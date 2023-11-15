@@ -28,6 +28,7 @@ import { TransactionSignature } from '@solana/web3.js';
 import { ConditionalTokenDeposit } from './ConditionalTokenDeposit';
 const ConditionalVaultIDL: ConditionalVault = require('../idl/conditional_vault.json');
 const CONDITIONAL_VAULT_PROGRAM_ID = new anchor.web3.PublicKey('vaU1tVLj8RFk7mNj1BxqgAsMKKaL8UvEUHvU3tdbZPe');
+export type ProposalAccount = anchor.IdlAccounts<AutocratV0>['proposal'];
 
 const getStatusColor = (status: string) => {
     switch (status) {
@@ -42,7 +43,11 @@ const getStatusColor = (status: string) => {
     }
 };
 
-export const Proposal = ({ proposal }) => {
+interface ProposalProps {
+    proposal: ProposalAccount,
+}
+
+export const Proposal: React.FC<ProposalProps> = ({ proposal }) => {
     const { connection } = useConnection();
     const wallet = useAnchorWallet();
     const { sendTransaction } = useWallet();
@@ -52,12 +57,6 @@ export const Proposal = ({ proposal }) => {
     const [userConditionalOnFailUsdcBalance, setUserConditionalOnFailUsdcBalance] = useState(0);
 
     const [usdcDepositAmount, setUsdcDepositAmount] = useState(0);
-
-    // Handle Deposit USDC
-    const handleDepositUsdc = async (amount) => {
-        // Implement the deposit logic here, similar to your second code snippet
-        // Use usdcDepositAmount as the amount to deposit
-    };
 
     useEffect(() => {
         if (wallet && connection) {
@@ -204,7 +203,6 @@ export const Proposal = ({ proposal }) => {
                     </Grid>
 
                     <Swap
-                        onSwap={() => {}}
                         passTwapMarket={proposal.openbookTwapPassMarket}
                         failTwapMarket={proposal.openbookTwapFailMarket}
                     />
