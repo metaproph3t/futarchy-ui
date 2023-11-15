@@ -82,6 +82,8 @@ const SignMessageDynamic = dynamic(async () => (await import('../components/Sign
 const SignTransactionDynamic = dynamic(async () => (await import('../components/SignTransaction')).SignTransaction, {
     ssr: false,
 });
+export type ProposalAccount = anchor.IdlAccounts<AutocratV0>['proposal'];
+export type DaoAccount = anchor.IdlAccounts<AutocratV0>['dao'];
 
 const Index: NextPage = () => {
     const { autoConnect, setAutoConnect } = useAutoConnect();
@@ -90,8 +92,8 @@ const Index: NextPage = () => {
 
     console.log(wallet?.publicKey.toBase58());
 
-    const [dao, setDAO] = useState(null);
-    const [proposals, setProposals] = useState([]);
+    const [dao, setDAO] = useState<DaoAccount | null>(null);
+    const [proposals, setProposals] = useState<ProposalAccount[]>([]);
     const [userMetaBalance, setUserMetaBalance] = useState(0);
     const [userUsdcBalance, setUserUsdcBalance] = useState(0);
 
@@ -187,7 +189,7 @@ const Index: NextPage = () => {
                     </Grid>
                 </Grid>
                 {proposals.map((proposal) => (
-                    <Proposal proposal={proposal} />
+                    <Proposal key={proposal.number} proposal={proposal} />
                 ))}
             </Container>
         </>
