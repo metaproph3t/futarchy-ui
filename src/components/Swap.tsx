@@ -66,11 +66,11 @@ declare const SelfTradeBehavior: {
 const OPENBOOK_PROGRAM_ID = new anchor.web3.PublicKey('opnb2LAfJYbRMAHHvqjCwQxanZn7ReEHp1k81EohpZb');
 
 interface SwapComponentProps {
-    onSwap: (amountIn: string, tokenIn: string, tokenOut: string, marketType: string) => void;
-    exchangeRate: number;
+    passTwapMarket: anchor.web3.PublicKey;
+    failTwapMarket: anchor.web3.PublicKey;
 }
 
-export const Swap = ({ onSwap, passTwapMarket, failTwapMarket }) => {
+export const Swap: React.FC<SwapComponentProps> = ({ passTwapMarket, failTwapMarket }) => {
     const [amountIn, setAmountIn] = useState('');
     const [tokenIn, setTokenIn] = useState('META');
     const [amountOut, setAmountOut] = useState(''); // New state for estimated amount out
@@ -86,7 +86,7 @@ export const Swap = ({ onSwap, passTwapMarket, failTwapMarket }) => {
         setAmountIn(newAmountIn);
 
         // Call simulateSwap and update amountOut
-        const estimatedAmountOut = await simulateSwap(newAmountIn);
+        const estimatedAmountOut = (await simulateSwap(parseFloat(newAmountIn))) || ''; // Fallback to an empty string if undefined
         setAmountOut(estimatedAmountOut); // Update the estimated amount out
     };
 
@@ -201,7 +201,7 @@ export const Swap = ({ onSwap, passTwapMarket, failTwapMarket }) => {
         }
     };
 
-    const simulateSwap = async (inputAmount) => {
+    const simulateSwap = async (inputAmount: number) => {
         if (wallet && connection) {
             if (!inputAmount || isNaN(inputAmount)) return;
 
@@ -307,31 +307,43 @@ export const Swap = ({ onSwap, passTwapMarket, failTwapMarket }) => {
 
             console.log(sim);
 
-            const userBaseBalanceAfter = token.unpackAccount(userBaseAccount.address, {
-                data: Buffer.from(
-                    Buffer.from(sim.value.accounts[0].data[0], sim.value.accounts[0].data[1] as BufferEncoding)
-                ),
-                executable: false,
-                lamports: 0,
-                owner: token.TOKEN_PROGRAM_ID,
-            }).amount;
-            console.log(userBaseBalanceAfter);
+            if (sim.value.accounts == null || sim.value.accounts.length < 2) {
+                return;
+            }
 
-            const userQuoteBalanceAfter = token.unpackAccount(userQuoteAccount.address, {
-                data: Buffer.from(
-                    Buffer.from(sim.value.accounts[1].data[0], sim.value.accounts[1].data[1] as BufferEncoding)
-                ),
-                executable: false,
-                lamports: 0,
-                owner: token.TOKEN_PROGRAM_ID,
-            }).amount;
-            console.log(userQuoteBalanceAfter);
+            const simulatedBaseAccount = sim.value.accounts[0];
+            const simulatedQuoteAccount = sim.value.accounts[1];
 
-            let simulatedAmountAfterTransaction = isBuying
-                ? ((Number(userBaseBalanceAfter) - userBaseBalanceBefore) / 1_000_000_000).toFixed(2)
-                : ((Number(userQuoteBalanceAfter) - userQuoteBalanceBefore) / 10_000).toFixed(2);
+            if (simulatedBaseAccount && simulatedQuoteAccount) {
+                const userBaseBalanceAfter = token.unpackAccount(userBaseAccount, {
+                    data: Buffer.from(
+                        Buffer.from(simulatedBaseAccount.data[0], simulatedBaseAccount.data[1] as BufferEncoding)
+                    ),
+                    executable: false,
+                    lamports: 0,
+                    owner: token.TOKEN_PROGRAM_ID,
+                }).amount;
+                console.log(userBaseBalanceAfter);
 
-            return simulatedAmountAfterTransaction;
+                const userQuoteBalanceAfter = token.unpackAccount(userQuoteAccount, {
+                    data: Buffer.from(
+                        Buffer.from(simulatedQuoteAccount.data[0], simulatedQuoteAccount.data[1] as BufferEncoding)
+                    ),
+                    executable: false,
+                    lamports: 0,
+                    owner: token.TOKEN_PROGRAM_ID,
+                }).amount;
+                console.log(userQuoteBalanceAfter);
+
+                let simulatedAmountAfterTransaction = isBuying
+                    ? ((Number(userBaseBalanceAfter) - userBaseBalanceBefore) / 1_000_000_000).toFixed(2)
+                    : ((Number(userQuoteBalanceAfter) - userQuoteBalanceBefore) / 10_000).toFixed(2);
+
+                return simulatedAmountAfterTransaction;
+            } else {
+                console.error("Simulation failed. Perhaps the user doesn't have enough balance?");
+                return 0;
+            }
         }
     };
 
