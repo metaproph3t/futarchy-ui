@@ -28,7 +28,13 @@ import { TransactionSignature } from '@solana/web3.js';
 const ConditionalVaultIDL: ConditionalVault = require('../idl/conditional_vault.json');
 const CONDITIONAL_VAULT_PROGRAM_ID = new anchor.web3.PublicKey('vaU1tVLj8RFk7mNj1BxqgAsMKKaL8UvEUHvU3tdbZPe');
 
-export const ConditionalTokenDeposit = ({ vault, tokenSymbol, scaleDecimals }) => {
+interface ConditionalTokenDepositProps {
+    vault: anchor.web3.PublicKey; // Replace VaultType with the correct type
+    tokenSymbol: string;
+    scaleDecimals: number;
+}
+
+export const ConditionalTokenDeposit: React.FC<ConditionalTokenDepositProps> = ({ vault, tokenSymbol, scaleDecimals }) => {
     const { connection } = useConnection();
     const wallet = useAnchorWallet();
     const { sendTransaction } = useWallet();
@@ -73,7 +79,7 @@ export const ConditionalTokenDeposit = ({ vault, tokenSymbol, scaleDecimals }) =
     });
 
     // Handle Deposit META
-    const handleDeposit = async (amount) => {
+    const handleDeposit = async (amount: number) => {
         let signature: TransactionSignature | undefined = undefined;
         if (!wallet) {
             console.error('Wallet not connected');
@@ -175,7 +181,7 @@ export const ConditionalTokenDeposit = ({ vault, tokenSymbol, scaleDecimals }) =
                         variant="outlined"
                         type="number"
                         value={depositAmount}
-                        onChange={(e) => setDepositAmount(e.target.value)}
+                        onChange={(e) => setDepositAmount(Number(e.target.value))}
                     />
                 </Grid>
                 <Grid item>
