@@ -175,7 +175,7 @@ const Index: NextPage = () => {
                         <Card>
                             <CardContent>
                                 <Typography variant="h5">USDC Balance</Typography>
-                                <Typography variant="body1">{userUsdcBalance / 1_000_000} USDC</Typography>
+                                <Typography variant="body1">{(userUsdcBalance / 1_000_000).toFixed(2)} USDC</Typography>
                             </CardContent>
                         </Card>
                     </Grid>
