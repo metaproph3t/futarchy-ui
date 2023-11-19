@@ -1,4 +1,5 @@
 {
+    "homepage": ".",
     "name": "@solana/wallet-adapter-example",
     "version": "0.18.27",
     "author": "Solana Maintainers <maintainers@solana.foundation>",

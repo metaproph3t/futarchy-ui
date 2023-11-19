@@ -9,6 +9,7 @@ import { WalletModalProvider as ReactUIWalletModalProvider } from '@solana/walle
 import { SolflareWalletAdapter } from '@solana/wallet-adapter-wallets';
 import { PhantomWalletAdapter } from '@solana/wallet-adapter-wallets';
 import { CoinbaseWalletAdapter } from '@solana/wallet-adapter-wallets';
+import { LedgerWalletAdapter } from '@solana/wallet-adapter-wallets';
 import { type SolanaSignInInput } from '@solana/wallet-standard-features';
 import { verifySignIn } from '@solana/wallet-standard-util';
 import { clusterApiUrl } from '@solana/web3.js';
@@ -79,6 +80,7 @@ const WalletContextProvider: FC<{ children: ReactNode }> = ({ children }) => {
             new SolflareWalletAdapter(),
             new CoinbaseWalletAdapter(),
             new PhantomWalletAdapter(),
+            new LedgerWalletAdapter(),
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
         [network]

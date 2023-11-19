@@ -337,7 +337,7 @@ export const Swap: React.FC<SwapComponentProps> = ({ passTwapMarket, failTwapMar
 
                 let simulatedAmountAfterTransaction = isBuying
                     ? ((Number(userBaseBalanceAfter) - userBaseBalanceBefore) / 1_000_000_000).toFixed(2)
-                    : ((Number(userQuoteBalanceAfter) - userQuoteBalanceBefore) / 10_000).toFixed(2);
+                    : ((Number(userQuoteBalanceAfter) - userQuoteBalanceBefore) / 1_000_000).toFixed(2);
 
                 return simulatedAmountAfterTransaction;
             } else {
